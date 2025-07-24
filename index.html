@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "চার্জ প্রবাহের হার পরিমাপের একক-",
+          options: {
+            a: "ভোল্ট",
+            b: "কুলম্ব",
+            c: "অ্যাম্পিয়ার",
+            d: "ওয়াট",
+          },
+          correct: "c",
+          explanation:
+            "<p>চার্জ প্রবাহের হার বলতে তড়িৎ প্রবাহকে বোঝায়। তড়িৎ প্রবাহের এসআই একক হলো অ্যাম্পিয়ার (Ampere)। এক অ্যাম্পিয়ার বলতে এক সেকেন্ডে এক কুলম্ব চার্জের প্রবাহকে বোঝায় (1 A = 1 C/s)। ভোল্ট হলো বিভব পার্থক্যের একক, কুলম্ব হলো চার্জের একক এবং ওয়াট হলো ক্ষমতার একক।</p>",
+        },
+        {
+          id: 2,
+          question: "কোন এককের সংকেত সঠিক?",
+          options: {
+            a: "চার্জ - W",
+            b: "তড়িৎ প্রবাহ - A",
+            c: "বিভব - C",
+            d: "তড়িৎ রাসায়নিক তুল্যাঙ্ক - Js⁻¹",
+          },
+          correct: "b",
+          explanation:
+            "<p>তড়িৎ প্রবাহের (Electric Current) এসআই একক হলো অ্যাম্পিয়ার (Ampere), যার সংকেত হলো A। চার্জের (Charge) একক হলো কুলম্ব (Coulomb), যার সংকেত C, কিন্তু W দ্বারা কাজ বা শক্তি বোঝানো হয়। বিভবের (Potential) একক হলো ভোল্ট (Volt), যার সংকেত V, কিন্তু C দ্বারা কুলম্ব বা ধারকত্ব বোঝানো হয়। তড়িৎ রাসায়নিক তুল্যাঙ্ক (Electrochemical Equivalent) এর একক হলো kg/C বা g/C, কিন্তু Js⁻¹ হলো ক্ষমতার একক ওয়াট (Watt)।</p>",
+        },
+        {
+          id: 3,
+          question: "গ্যালভানোমিটার দিয়ে তড়িৎ প্রবাহের কী নির্ণয়?",
+          options: {
+            a: "বিভব পার্থক্য ও রোধ",
+            b: "কেবল প্রবাহমাত্রা",
+            c: "প্রবাহমাত্রা ও রোধ",
+            d: "কোনোটিই নয়",
+          },
+          correct: "b",
+          explanation:
+            "<p>গ্যালভানোমিটার একটি সংবেদনশীল যন্ত্র যা বর্তনীতে ক্ষুদ্র তড়িৎ প্রবাহের উপস্থিতি ও দিক নির্ণয় করতে ব্যবহৃত হয়। এটি সরাসরি প্রবাহমাত্রা পরিমাপ করে না, তবে এর বিচ্যুতির মাধ্যমে প্রবাহের আপেক্ষিক মান বোঝা যায়। অ্যামিটার সরাসরি প্রবাহমাত্রা পরিমাপের জন্য ব্যবহৃত হয়। ভোল্টমিটার বিভব পার্থক্য পরিমাপ করে এবং ওহমমিটার রোধ পরিমাপ করে।</p>",
+        },
+        {
+          id: 4,
+          question: "দুটি সমান্তরাল তারে বিপরীত দিকে তড়িৎ প্রবাহে-",
+          options: {
+            a: "বিকর্ষণ করে",
+            b: "আকর্ষণ করে",
+            c: "প্রবাহিত হয়",
+            d: "সবগুলোই ঠিক",
+          },
+          correct: "a",
+          explanation:
+            "<p>দুটি সমান্তরাল তারে যখন বিপরীত দিকে তড়িৎ প্রবাহ চলে, তখন তাদের মধ্যে বিকর্ষণ বল কাজ করে। এই ঘটনাটি তড়িৎ প্রবাহের চৌম্বক ক্রিয়ার ফল। যখন একই দিকে প্রবাহ চলে, তখন তারগুলো আকর্ষণ করে।</p>",
+        },
+        {
+          id: 5,
+          question: "অ্যাম্পিয়ার-ঘন্টা কীসের একক?",
+          options: {
+            a: "সময়",
+            b: "তড়িৎ শক্তি",
+            c: "তড়িৎ প্রবাহ",
+            d: "তড়িৎ আধান",
+          },
+          correct: "d",
+          explanation:
+            "<p>অ্যাম্পিয়ার-ঘন্টা (Ampere-hour, Ah) হলো তড়িৎ আধান বা চার্জের একক। এটি সাধারণত ব্যাটারির ধারণক্ষমতা পরিমাপে ব্যবহৃত হয়। এটি বোঝায় যে একটি ব্যাটারি কত সময় ধরে একটি নির্দিষ্ট অ্যাম্পিয়ার প্রবাহ সরবরাহ করতে পারে। যেহেতু চার্জ (Q) = প্রবাহ (I) * সময় (t), তাই অ্যাম্পিয়ার (প্রবাহ) * ঘন্টা (সময়) = চার্জ।</p>",
+        },
+        {
+          id: 6,
+          question: "প্রবাহ ঘনত্বের একক-",
+          options: {
+            a: "Am",
+            b: "Am⁻¹",
+            c: "Am⁻²",
+            d: "Am⁻³",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রবাহ ঘনত্ব (Current Density) হলো প্রতি একক প্রস্থচ্ছেদের ক্ষেত্রফলে তড়িৎ প্রবাহের পরিমাণ। এর সমীকরণ হলো J = I/A, যেখানে I হলো তড়িৎ প্রবাহ (অ্যাম্পিয়ার, A) এবং A হলো প্রস্থচ্ছেদের ক্ষেত্রফল (বর্গমিটার, m²)। সুতরাং, প্রবাহ ঘনত্বের একক হলো অ্যাম্পিয়ার প্রতি বর্গমিটার (Am⁻²)।</p>",
+        },
+        {
+          id: 7,
+          question: "প্রস্থচ্ছেদের ক্ষেত্রফলে তড়িৎ প্রবাহ-",
+          options: {
+            a: "প্রবাহ ঘনত্ব",
+            b: "চৌম্বক বল",
+            c: "লরেঞ্জ বল",
+            d: "কোনোটিই নয়",
+          },
+          correct: "a",
+          explanation:
+            "<p>প্রস্থচ্ছেদের ক্ষেত্রফলে তড়িৎ প্রবাহের পরিমাণকে প্রবাহ ঘনত্ব (Current Density) বলা হয়। এটি একটি ভেক্টর রাশি যা তড়িৎ প্রবাহের দিক এবং প্রতি একক ক্ষেত্রফলে চার্জের প্রবাহের পরিমাণ নির্দেশ করে। চৌম্বক বল এবং লরেঞ্জ বল তড়িৎ প্রবাহের কারণে সৃষ্ট বল সম্পর্কিত ধারণা।</p>",
+        },
+        {
+          id: 8,
+          question: "চার্জ প্রবাহের হার-",
+          options: {
+            a: "তড়িৎ বিভব",
+            b: "তড়িৎ প্রবাহ",
+            c: "তড়িৎ পরিবাহিতা",
+            d: "তড়িৎ প্রাবল্য",
+          },
+          correct: "b",
+          explanation:
+            "<p>চার্জ প্রবাহের হারকে তড়িৎ প্রবাহ (Electric Current) বলে। অর্থাৎ, নির্দিষ্ট সময়ে একটি পরিবাহীর প্রস্থচ্ছেদ দিয়ে প্রবাহিত মোট চার্জের পরিমাণ। তড়িৎ বিভব হলো প্রতি একক চার্জে সম্পাদিত কাজ, তড়িৎ পরিবাহিতা হলো বিদ্যুৎ পরিবহনের ক্ষমতা এবং তড়িৎ প্রাবল্য হলো একটি তড়িৎ ক্ষেত্রের তীব্রতা।</p>",
+        },
+        {
+          id: 9,
+          question: "তড়িৎ বিভব ও প্রবাহের সম্পর্ক আবিষ্কারক-",
+          options: {
+            a: "নিউটন",
+            b: "অ্যাম্পিয়ার",
+            c: "ভোল্ট",
+            d: "ওহম",
+          },
+          correct: "d",
+          explanation:
+            "<p>তড়িৎ বিভব (V) এবং তড়িৎ প্রবাহের (I) মধ্যে সম্পর্ক, যা ওহমের সূত্র (V=IR) নামে পরিচিত, জার্মান পদার্থবিজ্ঞানী জর্জ সাইমন ওহম (Georg Simon Ohm) আবিষ্কার করেন। নিউটন বলবিদ্যা ও ক্যালকুলাসের জন্য পরিচিত, অ্যাম্পিয়ার তড়িৎ প্রবাহ ও চৌম্বকত্বের জন্য এবং ভোল্ট ইতালীয় বিজ্ঞানী আলেসান্দ্রো ভোল্টার নামে বিভবের একক হিসেবে পরিচিত।</p>",
+        },
+        {
+          id: 10,
+          question: "ওহমের সূত্র প্রমাণে প্রযোজ্য নয়-",
+          options: {
+            a: "ভোল্টমিটার সমান্তরালে",
+            b: "অ্যামিটার শ্রেণিতে",
+            c: "রিওস্ট্যাট শুধু রোধ বৃদ্ধি",
+            d: "একক সুইচ",
+          },
+          correct: "c",
+          explanation:
+            "<p>ওহমের সূত্র প্রমাণ করার সময় ভোল্টমিটারকে বর্তনীর সমান্তরালে এবং অ্যামিটারকে শ্রেণিতে যুক্ত করা হয়। রিওস্ট্যাট (Rheostat) বর্তনীর রোধ পরিবর্তন করে তড়িৎ প্রবাহ নিয়ন্ত্রণ করতে ব্যবহৃত হয়, যা রোধ বৃদ্ধি বা হ্রাস উভয়ই করতে পারে, শুধু বৃদ্ধি নয়। একটি একক সুইচ বর্তনীকে চালু বা বন্ধ করার জন্য ব্যবহৃত হয়। তাই, 'রিওস্ট্যাট শুধু রোধ বৃদ্ধি' এটি ওহমের সূত্র প্রমাণে প্রযোজ্য নয় এমন একটি ভুল ধারণা।</p>",
+        },
+        {
+          id: 11,
+          question: "ওহমের সূত্র প্রমাণে ব্যবহৃত হয় না-",
+          options: {
+            a: "ভোল্টমিটার",
+            b: "অ্যামিটার",
+            c: "গ্যালভানোমিটার",
+            d: "রিওস্ট্যাট",
+          },
+          correct: "c",
+          explanation:
+            "<p>ওহমের সূত্র প্রমাণ করার জন্য বর্তনীতে তড়িৎ প্রবাহ (অ্যামিটার দ্বারা) এবং বিভব পার্থক্য (ভোল্টমিটার দ্বারা) পরিমাপ করা হয় এবং রোধ (রিওস্ট্যাট দ্বারা) নিয়ন্ত্রণ করা হয়। গ্যালভানোমিটার খুবই ছোট প্রবাহ সনাক্ত করতে ব্যবহৃত হয়, যা ওহমের সূত্র প্রমাণের জন্য সরাসরি উপযুক্ত নয়, কারণ এখানে নির্দিষ্ট প্রবাহ এবং বিভব পার্থক্য পরিমাপের প্রয়োজন হয়।</p>",
+        },
+        {
+          id: 12,
+          question: "ওহমের সূত্রানুসারে-",
+          options: {
+            a: "বিভব বৃদ্ধিতে প্রবাহ বৃদ্ধি",
+            b: "প্রবাহ বৃদ্ধিতে রোধ বৃদ্ধি",
+            c: "বিভব বৃদ্ধিতে রোধ বৃদ্ধি",
+            d: "বিভব বৃদ্ধিতে রোধ ও প্রবাহ বৃদ্ধি",
+          },
+          correct: "a",
+          explanation:
+            "<p>ওহমের সূত্র অনুযায়ী, নির্দিষ্ট তাপমাত্রা ও অন্যান্য ভৌত অবস্থায় একটি পরিবাহীর মধ্য দিয়ে প্রবাহিত তড়িৎ প্রবাহ (I) তার দুই প্রান্তের বিভব পার্থক্যের (V) সমানুপাতিক, অর্থাৎ V ∝ I বা V = IR। এর অর্থ হলো, যদি বিভব পার্থক্য বৃদ্ধি করা হয়, তাহলে তড়িৎ প্রবাহও বৃদ্ধি পাবে, যদি রোধ স্থির থাকে।</p>",
+        },
+        {
+          id: 13,
+          question: "6A তড়িৎ প্রবাহমাত্রা-",
+          options: {
+            a: "6 J/C",
+            b: "6 C/s",
+            c: "6 W/s",
+            d: "6 V/C",
+          },
+          correct: "b",
+          explanation:
+            "<p>তড়িৎ প্রবাহের সংজ্ঞা অনুযায়ী, এক অ্যাম্পিয়ার (A) মানে হলো প্রতি সেকেন্ডে এক কুলম্ব (C) চার্জের প্রবাহ। অর্থাৎ, 1 A = 1 C/s। সুতরাং, 6A তড়িৎ প্রবাহমাত্রা মানে প্রতি সেকেন্ডে 6 কুলম্ব চার্জের প্রবাহ, বা 6 C/s।</p>",
+        },
+        {
+          id: 14,
+          question: "টেস্টারে বাল্ব জ্বলে কারণ-",
+          options: {
+            a: "তাপ গ্রহণ",
+            b: "দেহ বিদ্যুৎ পরিবহন করে না",
+            c: "বাল্ব চার্জিত",
+            d: "বর্তনীয় সম্পূর্ণ",
+          },
+          correct: "d",
+          explanation:
+            "<p>একটি টেস্টার (ফেইজ টেস্টার) দিয়ে যখন বিদ্যুতের উপস্থিতি পরীক্ষা করা হয়, তখন এর বাল্ব জ্বলে ওঠে কারণ টেস্টারটি মানবদেহের মাধ্যমে বর্তনীকে সম্পূর্ণ করে। টেস্টারের মধ্য দিয়ে সামান্য পরিমাণ তড়িৎ প্রবাহ মানবদেহের ভেতর দিয়ে মাটিতে যায়, যা বাল্বটিকে আলোকিত করার জন্য যথেষ্ট। এটি প্রমাণ করে যে বর্তনী সম্পূর্ণ হয়েছে এবং ফেইজ তারে বিদ্যুৎ রয়েছে।</p>",
+        },
+        {
+          id: 15,
+          question: "চল তড়িৎ এর ক্ষেত্রে প্রযোজ্য সূত্র-",
+          options: {
+            a: "কুলম্ব ও ওহম",
+            b: "গাউস ও কার্শফ",
+            c: "কুলম্ব ও গাউস",
+            d: "ওহম ও কার্শফ",
+          },
+          correct: "d",
+          explanation:
+            "<p>চল তড়িৎ (Current Electricity) এর ক্ষেত্রে ওহমের সূত্র (Ohm's Law) এবং কার্শফের সূত্রসমূহ (Kirchhoff's Laws) অত্যন্ত গুরুত্বপূর্ণ এবং প্রযোজ্য। ওহমের সূত্র বিভব পার্থক্য, প্রবাহ ও রোধের মধ্যে সম্পর্ক স্থাপন করে। কার্শফের কারেন্ট সূত্র (KCL) এবং ভোল্টেজ সূত্র (KVL) জটিল বর্তনী বিশ্লেষণে ব্যবহৃত হয়। কুলম্বের সূত্র এবং গাউসের সূত্র মূলত স্থির তড়িৎবিদ্যা (Electrostatics) এর সাথে সম্পর্কিত।</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                    <label class="option" data-option="${option}">
+                    <div class="circle">${option}</div>
+                    <span class="option-text">${question.options[option]}</span>
+                    </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
